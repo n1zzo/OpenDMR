@@ -155,7 +155,7 @@ void _ui_drawVFOMiddleInput(ui_state_t* ui_state)
     }
 }
 
-void _ui_drawBottom()
+void _ui_drawMainBottom()
 {
     // Squelch bar
     float rssi = last_state.rssi;
@@ -178,7 +178,7 @@ void _ui_drawMainVFO()
     gfx_clearScreen();
     _ui_drawMainTop();
     _ui_drawFrequency();
-    _ui_drawBottom();
+    _ui_drawMainBottom();
 }
 
 void _ui_drawMainVFOInput(ui_state_t* ui_state)
@@ -186,7 +186,7 @@ void _ui_drawMainVFOInput(ui_state_t* ui_state)
     gfx_clearScreen();
     _ui_drawMainTop();
     _ui_drawVFOMiddleInput(ui_state);
-    _ui_drawBottom();
+    _ui_drawMainBottom();
 }
 
 void _ui_drawMainMEM()
@@ -195,5 +195,5 @@ void _ui_drawMainMEM()
     _ui_drawMainTop();
     _ui_drawZoneChannel();
     _ui_drawFrequency();
-    _ui_drawBottom();
+    _ui_drawMainBottom();
 }

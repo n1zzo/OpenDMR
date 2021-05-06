@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2020 by Federico Amedeo Izzo IU2NUO,                    *
+ *   Copyright (C) 2021 by Federico Amedeo Izzo IU2NUO,                    *
  *                         Niccolò Izzo IU2KIN                             *
  *                         Frederik Saraci IU2NRO                          *
  *                         Silvano Seva IU2KWO                             *
@@ -30,40 +30,50 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include <interfaces/keyboard.h>
-#include <SDL2/SDL.h>
+#include <ui.h>
+#include <string.h>
 
-void kbd_init()
+/* UI main screen helper functions, their implementation is in "ui_main.c" */
+extern void _ui_drawMainTop();
+
+void _ui_drawModeVFOMiddle()
 {
+    // Print VFO RX Frequency on line 1 of 4
+    gfx_printLine(1, 4, layout.top_h, SCREEN_HEIGHT - layout.bottom_h, layout.horizontal_pad, layout.line1_font, 
+                  TEXT_ALIGN_LEFT, color_white, "rx: %03lu.%05lu",
+                  (unsigned long)last_state.channel.rx_frequency/1000000,
+                  (unsigned long)last_state.channel.rx_frequency%1000000/10);
+    // Print Module / Talkgroup on line 2 of 4
+    gfx_printLine(2, 4, layout.top_h, SCREEN_HEIGHT - layout.bottom_h, layout.horizontal_pad, layout.line1_font, 
+                  TEXT_ALIGN_LEFT, color_white, "mo:");
+    // Print User ID on line 3 of 4
+    gfx_printLine(3, 4, layout.top_h, SCREEN_HEIGHT - layout.bottom_h, layout.horizontal_pad, layout.line1_font, 
+                  TEXT_ALIGN_LEFT, color_white, "id:");
 }
 
-keyboard_t kbd_getKeys() {
-    keyboard_t keys = 0;
-    SDL_PumpEvents();
-    
-    const uint8_t *state = SDL_GetKeyboardState(NULL);
-    if (state[SDL_SCANCODE_0]) keys |= KEY_0;
-    if (state[SDL_SCANCODE_1]) keys |= KEY_1;
-    if (state[SDL_SCANCODE_2]) keys |= KEY_2;
-    if (state[SDL_SCANCODE_3]) keys |= KEY_3;
-    if (state[SDL_SCANCODE_4]) keys |= KEY_4;
-    if (state[SDL_SCANCODE_5]) keys |= KEY_5;
-    if (state[SDL_SCANCODE_6]) keys |= KEY_6;
-    if (state[SDL_SCANCODE_7]) keys |= KEY_7;
-    if (state[SDL_SCANCODE_8]) keys |= KEY_8;
-    if (state[SDL_SCANCODE_9]) keys |= KEY_9;
-    if (state[SDLK_ASTERISK]) keys |= KEY_STAR;
-    if (state[SDL_SCANCODE_ESCAPE]) keys |= KEY_ESC;
-    if (state[SDL_SCANCODE_DOWN]) keys |= KEY_DOWN;
-    if (state[SDL_SCANCODE_UP]) keys |= KEY_UP;
-    if (state[SDL_SCANCODE_LEFT]) keys |= KEY_LEFT;
-    if (state[SDL_SCANCODE_RIGHT]) keys |= KEY_RIGHT;
-    if (state[SDL_SCANCODE_RETURN]) keys |= KEY_ENTER;
-    if (state[SDL_SCANCODE_NONUSHASH]) keys |= KEY_HASH;
-    if (state[SDL_SCANCODE_N]) keys |= KEY_F1;
-    if (state[SDL_SCANCODE_M]) keys |= KEY_MONI;
-    if (state[SDL_SCANCODE_PAGEUP]) keys |= KNOB_LEFT;
-    if (state[SDL_SCANCODE_PAGEDOWN]) keys |= KNOB_RIGHT;
-    return keys;
+void _ui_drawModeMEMMiddle()
+{
+    // Print Channel name on line 1 of 4
+    gfx_printLine(1, 4, layout.top_h, SCREEN_HEIGHT - layout.bottom_h, layout.horizontal_pad, layout.line1_font, 
+                  TEXT_ALIGN_LEFT, color_white, "ch: %.12s", last_state.channel.name);
+    // Print Module Frequency on line 2 of 4
+    gfx_printLine(2, 4, layout.top_h, SCREEN_HEIGHT - layout.bottom_h, layout.horizontal_pad, layout.line1_font, 
+                  TEXT_ALIGN_LEFT, color_white, "mo:");
+    // Print User ID on line 3 of 4
+    gfx_printLine(3, 4, layout.top_h, SCREEN_HEIGHT - layout.bottom_h, layout.horizontal_pad, layout.line1_font, 
+                  TEXT_ALIGN_LEFT, color_white, "id:");
 }
 
+void _ui_drawModeVFO()
+{
+    gfx_clearScreen();
+    _ui_drawMainTop();
+    _ui_drawModeVFOMiddle();
+}
+
+void _ui_drawModeMEM()
+{
+    gfx_clearScreen();
+    _ui_drawMainTop();
+    _ui_drawModeMEMMiddle();
+}
