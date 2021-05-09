@@ -41,12 +41,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/*
- * Uncomment this directive to sample audio coming from RTX stage instead of the
- * one from microphone.
- */
-// #define SAMPLE_RTX_AUDIO
-
 static const char hexdigits[]="0123456789abcdef";
 void printUnsignedInt(uint16_t x)
 {
@@ -63,8 +57,7 @@ int main()
 {
     platform_init();
 
-
-    static const size_t numSamples = 45*1024;       // 80kB
+    static const size_t numSamples = 45*1024;       // 90kB
     uint16_t *sampleBuf = ((uint16_t *) malloc(numSamples * sizeof(uint16_t)));
 
     /*
@@ -96,37 +89,20 @@ int main()
 
     delayMs(3000);
 
-    platform_ledOn(GREEN);
-
-    /* Print RSSI */
-    // while(1)
-    // {
-    //     rtx_taskFunc();
-    //     delayMs(25);
-    //     printf("RSSI: %f\n", rtx_getRssi());
-    // }
-
     /*
      * ADC and DMA Setup
      */
+    gpio_setMode(GPIOC, 3, INPUT_ANALOG);
 
-    gpio_setMode(GPIOC, 3, INPUT_ANALOG);       // platform_init() also configures ADC1.
-                                                // DMA2 Stream 0 is used.
-
-    DMA2_Stream0->CR = 0;                       // stop DMA and ADC
-    DMA2->HIFCR = 0xFFFF;                       // clear DMA interrupt flags from stoping
-    DMA2->LIFCR = 0xFFFF;
-    ADC1->CR1 = 0;                              // and reset control registers from
-    ADC1->CR2 = 0;                              // platform_init()
-
-    RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
+    RCC->APB2ENR |= RCC_APB2ENR_ADC2EN;
     RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
     RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
     __DSB();
 
     /*
      * TIM2 for conversion triggering via TIM2_TRGO, that is counter reload.
-     * AP1 frequency is 42MHz but timer runs at 84MHz, configure for 48kHz interrupt rate.
+     * AP1 frequency is 42MHz but timer runs at 84MHz, configure for 48kHz
+     * interrupt rate.
      */
     TIM2->PSC = 9;      /* Tick rate 8.4MHz     */
     TIM2->ARR = 174;    /* Overflow rate 48kHz  */
@@ -135,20 +111,21 @@ int main()
     TIM2->CR2 = TIM_CR2_MMS_1;
     TIM2->CR1 = TIM_CR1_CEN;
 
-    /* DMA2 Stream 0 configuration:
-     * - channel 0: ADC1
-     * - low priority
+    /* DMA2 Stream 2 configuration:
+     * - channel 1: ADC2
+     * - high priority
      * - half-word transfer, both memory and peripheral
      * - increment memory
      * - peripheral-to-memory transfer
      * - no interrupts
      */
-    DMA2_Stream0->PAR = ((uint32_t) &(ADC1->DR));
-    DMA2_Stream0->M0AR = ((uint32_t) sampleBuf);
-    DMA2_Stream0->NDTR = numSamples;
-    DMA2_Stream0->CR = DMA_SxCR_MSIZE_0     /* Memory size: 16 bit     */
+    DMA2_Stream2->PAR = ((uint32_t) &(ADC2->DR));
+    DMA2_Stream2->M0AR = ((uint32_t) sampleBuf);
+    DMA2_Stream2->NDTR = numSamples;
+    DMA2_Stream2->CR = DMA_SxCR_CHSEL_0     /* ADC2 is on channel 1    */
+                     | DMA_SxCR_MSIZE_0     /* Memory size: 16 bit     */
                      | DMA_SxCR_PSIZE_0     /* Peripheral size: 16 bit */
-                     | DMA_SxCR_PL_0        /* Medium priority         */
+                     | DMA_SxCR_PL_1        /* High priority           */
                      | DMA_SxCR_MINC        /* Increment memory        */
                      | DMA_SxCR_EN;
 
@@ -157,47 +134,41 @@ int main()
      * A conversion takes 12 cycles.
      */
     ADC->CCR |= ADC_CCR_ADCPRE;
-    ADC1->SMPR2 = ADC_SMPR2_SMP0
-                | ADC_SMPR2_SMP1
-                | ADC_SMPR2_SMP3
-                | ADC_SMPR2_SMP8;
+    ADC2->SMPR1 = ADC_SMPR1_SMP13;
 
-    ADC1->SQR1 = 0;    /* One channel to be converted */
-    ADC1->SQR3 = 13;   /* CH13, audio from RTX on PC3 */
+    ADC2->SQR1 = 0;    /* One channel to be converted */
+    ADC2->SQR3 = 13;   /* CH13, audio from RTX on PC3 */
 
     /*
-     * No overrun interrupt, 12-bit resolution, no analog watchdog, no
-     * discontinuous mode, enable scan mode, no end of conversion interrupts,
-     * enable continuous conversion (free-running).
+     * No overrun interrupt, 12-bit resolution, no analog watchdog, conversion
+     * start on external trigger, trigger conversion on TIM2_TRGO rising edge,
+     * request DMA transfer.
      */
-    ADC1->CR1 |= ADC_CR1_DISCEN;
-    ADC1->CR2 |= ADC_CR2_EXTEN_0    /* Trigger on rising edge        */
+    ADC2->CR1 |= ADC_CR1_DISCEN;
+    ADC2->CR2 |= ADC_CR2_EXTEN_0    /* Trigger on rising edge        */
               |  ADC_CR2_EXTSEL_1
               |  ADC_CR2_EXTSEL_2   /* 0b0110 TIM2_TRGO trig. source */
-              |  ADC_CR2_DDS        /* Enable DMA data transfer      */
-              |  ADC_CR2_DMA
+              |  ADC_CR2_DMA        /* Enable DMA data transfer      */
               |  ADC_CR2_ADON;      /* Enable ADC                    */
 
     /* Flash LED while DMA is running */
-    while((DMA2_Stream0->CR & DMA_SxCR_EN) == 1)
+    while((DMA2_Stream2->CR & DMA_SxCR_EN) == 1)
     {
         gpio_togglePin(GREEN_LED);
         delayMs(100);
     }
 
     /* Dump samples */
-
     platform_ledOff(GREEN);
     platform_ledOn(RED);
     delayMs(10000);
 
     for(size_t i = 0; i < numSamples; i++)
     {
-        //printf("%d\n", sampleBuf[i]);
         printUnsignedInt(sampleBuf[i]);
     }
 
-    platform_ledOff(RED);   // why doesn't this turn off?
+    platform_ledOff(RED);
 
     while(1) ;
 
