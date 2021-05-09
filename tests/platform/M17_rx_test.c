@@ -63,7 +63,7 @@ int main()
 {
     platform_init();
 
-    
+
     static const size_t numSamples = 45*1024;       // 80kB
     uint16_t *sampleBuf = ((uint16_t *) malloc(numSamples * sizeof(uint16_t)));
 
@@ -93,9 +93,9 @@ int main()
     /* After mutex has been released, post the new configuration */
     rtx_configure(&cfg);
     rtx_taskFunc();
-    
-    delayMs(1000);
-    
+
+    delayMs(3000);
+
     platform_ledOn(GREEN);
 
     /* Print RSSI */
@@ -103,21 +103,21 @@ int main()
     // {
     //     rtx_taskFunc();
     //     delayMs(25);
-    //     printf("RSSI: %f\n", rtx_getRssi()); 
+    //     printf("RSSI: %f\n", rtx_getRssi());
     // }
 
-    /* 
-     * ADC and DMA Setup 
-     */ 
+    /*
+     * ADC and DMA Setup
+     */
 
-    gpio_setMode(GPIOC, 3, INPUT_ANALOG);       // platform_init() also configures ADC1. 
-                                                // DMA2 Stream 0 is used. 
+    gpio_setMode(GPIOC, 3, INPUT_ANALOG);       // platform_init() also configures ADC1.
+                                                // DMA2 Stream 0 is used.
 
     DMA2_Stream0->CR = 0;                       // stop DMA and ADC
     DMA2->HIFCR = 0xFFFF;                       // clear DMA interrupt flags from stoping
-    DMA2->LIFCR = 0xFFFF;                      
-    ADC1->CR1 = 0;                              // and reset control registers from 
-    ADC1->CR2 = 0;                              // platform_init()  
+    DMA2->LIFCR = 0xFFFF;
+    ADC1->CR1 = 0;                              // and reset control registers from
+    ADC1->CR2 = 0;                              // platform_init()
 
     RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
     RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
@@ -176,19 +176,18 @@ int main()
               |  ADC_CR2_EXTSEL_2   /* 0b0110 TIM2_TRGO trig. source */
               |  ADC_CR2_DDS        /* Enable DMA data transfer      */
               |  ADC_CR2_DMA
-              |  ADC_CR2_ALIGN
               |  ADC_CR2_ADON;      /* Enable ADC                    */
 
     /* Flash LED while DMA is running */
     while((DMA2_Stream0->CR & DMA_SxCR_EN) == 1)
     {
-        gpio_togglePin(GREEN_LED);   
+        gpio_togglePin(GREEN_LED);
         delayMs(100);
     }
 
-    /* Dump samples */ 
+    /* Dump samples */
 
-    platform_ledOff(GREEN); 
+    platform_ledOff(GREEN);
     platform_ledOn(RED);
     delayMs(10000);
 
@@ -198,7 +197,7 @@ int main()
         printUnsignedInt(sampleBuf[i]);
     }
 
-    platform_ledOff(RED);   // why doesn't this turn off? 
+    platform_ledOff(RED);   // why doesn't this turn off?
 
     while(1) ;
 
