@@ -64,6 +64,7 @@ enum uiScreen
     SETTINGS_TIMEDATE_SET,
     SETTINGS_DISPLAY,
     SETTINGS_GPS,
+    SETTINGS_M17,
     LOW_BAT
 };
 
@@ -97,6 +98,7 @@ enum settingsItems
 #ifdef HAS_GPS
     ,S_GPS
 #endif
+    ,S_M17
 };
 
 enum displayItems
