@@ -168,6 +168,7 @@ typedef struct ui_state_t
     uint8_t input_number;
     uint8_t input_position;
     uint8_t input_set;
+    long long last_keypress;
     freq_t new_rx_frequency;
     freq_t new_tx_frequency;
     char new_rx_freq_buf[14];
@@ -178,6 +179,7 @@ typedef struct ui_state_t
     char new_date_buf[9];
     char new_time_buf[9];
 #endif
+    char new_callsign[10];
     // Which state to return to when we exit menu
     uint8_t last_main_state;
 }
