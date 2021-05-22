@@ -60,7 +60,7 @@ enum AudioPriority
     PRIO_TX            ///< Tx can always take over and will never be interrupted
 };
 
-typedef int8_t pathId
+typedef int8_t pathId;
 
 /********************* Priority Management Functions ***********************/
 
@@ -73,7 +73,9 @@ typedef int8_t pathId
  * @param prio: priority of the requester
  * @return a unique identifier of the opened path or -1 if path is already used.
  */
-pathId audioPath_open(AudioSource source, AudioSink sink, AudioPriority prio);
+pathId audioPath_open(enum AudioSource source,
+                      enum AudioSink sink,
+                      enum AudioPriority prio);
 
 /**
  * Release an audio path
