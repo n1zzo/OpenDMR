@@ -64,7 +64,7 @@ void IRQbspInit()
 
 void bspInit2()
 {
-    vcom_init();
+//     vcom_init();
 }
 
 //
