@@ -36,6 +36,7 @@
 #include <interfaces/nvmem.h>
 #include <interfaces/rtc.h>
 #include <interfaces/audio.h>
+#include <interfaces/usb.h>
 #include <chSelector.h>
 
 #ifdef ENABLE_BKLIGHT_DIMMING
@@ -70,6 +71,7 @@ void platform_init()
     rtc_init();                      /* Initialise RTC                         */
     chSelector_init();               /* Initialise channel selector handler    */
     audio_init();                    /* Initialise audio management module     */
+    usb_init();                      /* Initialise USB driver                  */
 
     #ifdef ENABLE_BKLIGHT_DIMMING
     backlight_init();                /* Initialise backlight driver            */
@@ -98,6 +100,7 @@ void platform_terminate()
     rtc_terminate();
     chSelector_terminate();
     audio_terminate();
+    usb_terminate();
 
     /* Finally, remove power supply */
     gpio_clearPin(PWR_SW);
