@@ -38,6 +38,7 @@
 #include <toneGenerator_MDx.h>
 #include <interfaces/rtc.h>
 #include <interfaces/audio.h>
+#include <interfaces/usb.h>
 
 md3x0Calib_t calibration;
 hwInfo_t hwInfo;
@@ -76,6 +77,7 @@ void platform_init()
     rtc_init();                      /* Initialise RTC                         */
     backlight_init();                /* Initialise backlight driver            */
     audio_init();                    /* Initialise audio management module     */
+    usb_init();                      /* Initialise USB driver                  */
 }
 
 void platform_terminate()
