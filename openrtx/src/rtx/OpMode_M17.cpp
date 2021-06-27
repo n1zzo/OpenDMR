@@ -149,6 +149,7 @@ void symbols_to_baseband(const std::array<int8_t, M17_FRAME_SYMBOLS> *symbols,
     }
 }
 
+#if defined(PLATFORM_MDUV3x0) | defined(PLATFORM_MD3x0)
 /*
  * Converts int16_t used by the modulator into uint8_t used by the PWM,
  * packed in a uint16_t array, as required by the STM32 DMA
@@ -165,7 +166,7 @@ void baseband_to_pwm_stm32(std::array<audio_sample_t, M17_FRAME_SAMPLES> *baseba
  * Converts 12-bit unsigned values packed into uint16_t into int16_t samples,
  * perform in-place conversion to save space.
  */
-void adc_to_audio(std::array<audio_sample_t, M17_AUDIO_SIZE> *audio)
+void adc_to_audio_stm32(std::array<audio_sample_t, M17_AUDIO_SIZE> *audio)
 {
     for (int i = 0; i < M17_AUDIO_SIZE; i++)
     {
@@ -184,7 +185,7 @@ std::array<audio_sample_t, M17_AUDIO_SIZE> *OpMode_M17::input_audio_stm32()
     std::array<audio_sample_t, M17_AUDIO_SIZE> *audio =
         reinterpret_cast<std::array<audio_sample_t, M17_AUDIO_SIZE>*>(stream);
     // Convert 12-bit unsigned values into 16-bit signed
-    adc_to_audio(audio);
+    adc_to_audio_stm32(audio);
     // Apply DC removal filter
     dsp_dcRemoval(audio->data(), audio->size());
 
@@ -212,7 +213,7 @@ void OpMode_M17::output_baseband_stm32(std::array<audio_sample_t, M17_FRAME_SAMP
                                             M17_RTX_SAMPLE_RATE);
 }
 
-#if defined(PLATFORM_LINUX)
+#elif defined(PLATFORM_LINUX)
 /*
  * Reads the input audio from a file on Linux
  */
@@ -295,7 +296,6 @@ lsf_t OpMode_M17::send_lsf(const std::string& src, const std::string& dest)
     lsf_t result;
     result.fill(0);
 
-    // TODO: statically allocate these into heap and create them at init, deallocate at stop
     M17Randomizer<M17_CODEC2_SIZE> randomizer;
     PolynomialInterleaver<45, 92, M17_CODEC2_SIZE> interleaver;
     CRC16<0x5935, 0xFFFF> crc;
@@ -535,6 +535,7 @@ void OpMode_M17::enable()
     // When starting, close squelch and prepare for entering in RX mode.
     enterRx   = true;
 
+#if defined(PLATFORM_MDUV3x0) | defined(PLATFORM_MD3x0)
     // Start sampling from the microphone
     input_id = inputStream_start(SOURCE_MIC,
                                  PRIO_TX,
@@ -542,8 +543,7 @@ void OpMode_M17::enable()
                                  M17_AUDIO_SIZE,
                                  BUF_CIRC_DOUBLE,
                                  M17_VOICE_SAMPLE_RATE);
-
-#if defined(PLATFORM_LINUX)
+#elif defined(PLATFORM_LINUX)
     // Test M17 on linux
     infile.open ("./m17_input.raw", std::ios::in | std::ios::binary);
     FILE *outfile = fopen ("./m17_output.raw", "wb");
@@ -553,8 +553,13 @@ void OpMode_M17::enable()
 
 void OpMode_M17::disable()
 {
+#if defined(PLATFORM_MDUV3x0) | defined(PLATFORM_MD3x0)
     // Terminate microphone sampling
     inputStream_stop(input_id);
+#elif defined(PLATFORM_LINUX)
+    // Test M17 on linux
+    infile.close();
+#endif
     // Clean shutdown.
     audio_disableAmp();
     audio_disableMic();
@@ -566,10 +571,6 @@ void OpMode_M17::disable()
     delete symbols;
     delete baseband;
 
-#if defined(PLATFORM_LINUX)
-    // Test M17 on linux
-    infile.close();
-#endif
 }
 
 void OpMode_M17::update(rtxStatus_t *const status, const bool newCfg)
